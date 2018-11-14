@@ -12,6 +12,7 @@ import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 
 import cn.com.ut.dao.DsGoodsRepository;
+import cn.com.ut.dao.DsImportHistoryRepository;
+import cn.com.ut.entity.DsImportHistory;
 import cn.com.ut.pojo.GoodsIndexQueryVo;
 import cn.com.ut.service.GoodsService;
 import cn.com.ut.util.CollectionUtil;
@@ -39,14 +42,33 @@ public class GoodsServiceImpl extends JPQLQueryUtil implements GoodsService {
 	@Autowired
 	private DsGoodsRepository goodsRepository;
 
+	@Autowired
+	private DsImportHistoryRepository importHistoryRepository;
+
+	// @Autowired
+	// private DsGoodsEsRepository esGoodsRepository;
+
 	@Override
 	public List<Map<String, Object>> importGoodsData(String index, String type) {
 
+		Sort sort = new Sort(Sort.Direction.DESC, "id");
+		List<DsImportHistory> importHistoryList = importHistoryRepository.findAll(sort);
+
 		SQLHelper selectSql = SQLHelper.builder();
+		Map<String, Object> params = new HashMap<>();
+
 		selectSql.append(
 				"select new map(g.id as goods_id,g.goodsName as goods_name,g.goodsDesc as goods_desc,g.storeId as store_id,s.storeName as store_name,g.imagePath as goods_image,g.goodsPrice as goods_price,g.goodsDiscount as goods_discount,g.goodsSalenum as goods_salenum,g.appId as app_id,g.isDel as is_del,g.goodsState as goods_state,s.storeState as store_state,g.goodsShelftime as goods_shelftime) from Goods g left join Store s on g.storeId = s.id");
 
-		Map<String, Object> params = new HashMap<>();
+		// 如果导入历史为空，则导入所有商品数据；不为空则比对导入历史记录表中的最后创建时间和更新时间后的数据-
+		if (!CollectionUtil.isEmptyCollection(importHistoryList)) {
+			DsImportHistory importHistory = importHistoryList.get(0);
+
+			selectSql.append("where g.createTime > :createTime or g.updateTime > :updateTime");
+			params.put("createTime", importHistory.getCreateTime());
+			params.put("updateTime", importHistory.getUpdateTime());
+
+		}
 
 		SQLHelper orderBySql = SQLHelper.builder();
 
@@ -65,7 +87,27 @@ public class GoodsServiceImpl extends JPQLQueryUtil implements GoodsService {
 				}
 			}
 			JSONArray goodsJsonArray = JSONArray.parseArray(JSON.toJSONString(goodsList));
-			ElasticSearchUtil.bulkInsertData(index, type, goodsJsonArray);
+			ElasticSearchUtil.bulkInsertData(index, type, goodsJsonArray, "goods_id");
+
+			// 查询出最大创建时间和更新时间，插入导入历史信息表
+			SQLHelper maxCreateTimeSql = SQLHelper.builder();
+			SQLHelper maxUpdateTimeSql = SQLHelper.builder();
+
+			maxCreateTimeSql
+					.append("select new map(max(g.createTime) as max_create_time) from Goods g");
+			maxUpdateTimeSql
+					.append("select new map(max(g.updateTime) as max_update_time) from Goods g");
+
+			Map<String, Object> createTimeMap = super.getOne(maxCreateTimeSql.toSQL(),
+					new HashMap<>());
+			Map<String, Object> updateTimeMap = super.getOne(maxUpdateTimeSql.toSQL(),
+					new HashMap<>());
+
+			DsImportHistory importHistory = new DsImportHistory();
+			importHistory.setTableName("goods");
+			importHistory.setCreateTime((Date) createTimeMap.get("max_create_time"));
+			importHistory.setUpdateTime((Date) updateTimeMap.get("max_update_time"));
+			importHistoryRepository.save(importHistory);
 		}
 
 		return goodsList;

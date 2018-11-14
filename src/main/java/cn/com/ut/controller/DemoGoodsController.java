@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.alibaba.fastjson.JSON;
 
-import cn.com.ut.dao.GoodsRepository;
-import cn.com.ut.entity.Goods;
+import cn.com.ut.dao.DemoGoodsRepository;
+import cn.com.ut.entity.DemoGoods;
 
 /**
  * 
@@ -18,10 +18,10 @@ import cn.com.ut.entity.Goods;
  */
 @RestController
 @RequestMapping("/goods")
-public class GoodsController {
+public class DemoGoodsController {
 
 	@Autowired
-	private GoodsRepository goodsRepository;
+	private DemoGoodsRepository goodsRepository;
 
 	/**
 	 * 添加
@@ -29,7 +29,7 @@ public class GoodsController {
 	 * @return
 	 */
 	@GetMapping("/add")
-	public String add(Goods goods) {
+	public String add(DemoGoods goods) {
 
 		goodsRepository.save(goods);
 		return "success";
@@ -43,7 +43,7 @@ public class GoodsController {
 	@GetMapping("/delete/{id}")
 	public String delete(@PathVariable String id) {
 
-		Goods goods = goodsRepository.queryGoodsById(id);
+		DemoGoods goods = goodsRepository.queryGoodsById(id);
 		if (goods != null) {
 			goodsRepository.delete(goods);
 		}
@@ -68,7 +68,7 @@ public class GoodsController {
 	 * @return
 	 */
 	@GetMapping("/update")
-	public String update(Goods goods) {
+	public String update(DemoGoods goods) {
 
 		goodsRepository.save(goods);
 		return "success";
@@ -80,9 +80,9 @@ public class GoodsController {
 	 * @return
 	 */
 	@GetMapping("/query")
-	public Goods query() {
+	public DemoGoods query() {
 
-		Goods goods = goodsRepository.queryGoodsById("1");
+		DemoGoods goods = goodsRepository.queryGoodsById("1");
 		String jsonString = JSON.toJSONString(goods);
 		return goods;
 	}

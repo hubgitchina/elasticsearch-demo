@@ -22,7 +22,7 @@ import lombok.Data;
 // refreshInterval = "-1")
 @Data
 @Document(indexName = "demo", type = "goods")
-public class Goods {
+public class DemoGoods {
 
 	@Id
 	@JSONField(name = "id")

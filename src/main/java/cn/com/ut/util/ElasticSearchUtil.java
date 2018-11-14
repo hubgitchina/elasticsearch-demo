@@ -196,7 +196,8 @@ public class ElasticSearchUtil {
 		return "插入数据成功";
 	}
 
-	public static String bulkInsertData(String index, String type, JSONArray batchData) {
+	public static String bulkInsertData(String index, String type, JSONArray batchData,
+			String idField) {
 
 		Client client = EsServerClient.getClient();
 
@@ -205,7 +206,9 @@ public class ElasticSearchUtil {
 		for (int i = 0; i < batchData.size(); i++) {
 			JSONObject data = batchData.getJSONObject(i);
 
-			bulkRequest.add(client.prepareIndex(index, type).setSource(data));
+			String id = data.getString(idField);
+
+			bulkRequest.add(client.prepareIndex(index, type).setId(id).setSource(data));
 		}
 
 		BulkResponse bulkResponse = bulkRequest.execute().actionGet();
