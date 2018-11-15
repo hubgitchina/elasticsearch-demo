@@ -370,6 +370,13 @@ public class ElasticSearchUtil {
 		return searchFunction(queryBuilder);
 	}
 
+	/**
+	 * 多个字段IK查找 (matchQuery会将搜索词分词，再与目标查询字段进行匹配，若分词中的任意一个词与目标字段匹配上，则可查询到)
+	 * 
+	 * @param searchFields
+	 * @param keyword
+	 * @return
+	 */
 	public static List<Map<String, Object>> matchMultiQuery(String[] searchFields, String keyword) {
 
 		QueryBuilder queryBuilder = QueryBuilders.multiMatchQuery(keyword, searchFields);
