@@ -1,4 +1,4 @@
-# elasticsearch-demo
+# spring-data-elasticsearch 使用说明
 1.ElasticSearch安装部署
 
 注意使用2.3版本，否则得设置内存等，同时高版本的 ES，目前稳定版的 SpringBoot 1.5.13 的 SpringData 并不支持。
