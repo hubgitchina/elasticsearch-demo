@@ -818,8 +818,6 @@ public class ElasticSearchUtil {
 
 	public static void main(String[] args) throws Exception {
 
-		// createMapping("test", "test");
-		// createCluterName("test");
 	}
 
 }
