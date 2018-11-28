@@ -536,7 +536,7 @@ public class ElasticSearchUtil {
 	}
 
 	/**
-	 * 清除滚动ID
+	 * 批量清除滚动ID
 	 * 
 	 * @param client
 	 * @param scrollIdList
@@ -816,35 +816,10 @@ public class ElasticSearchUtil {
 		}
 	}
 
-	private List<Map<String, Object>> searchFunction(QueryBuilder queryBuilder, String[] indices,
-			String[] types) {
-
-		Client client = EsServerClient.getClient();
-
-		SearchRequestBuilder requestBuilder = client.prepareSearch().setIndices(indices)
-				.setTypes(types).setScroll(new TimeValue(60000)).setQuery(queryBuilder);
-		SearchResponse response = requestBuilder.setFrom(0).setSize(100).execute().actionGet();
-		SearchHits searchHits = response.getHits();
-		SearchHit[] hits = searchHits.getHits();
-
-		client.close();
-
-		if (hits.length > 0) {
-			List<Map<String, Object>> resultList = Lists.newArrayListWithCapacity(hits.length);
-			for (SearchHit searchHit : hits) {
-				Map<String, Object> sourceAsMap = searchHit.sourceAsMap();
-				resultList.add(sourceAsMap);
-			}
-			return resultList;
-		} else {
-			return Collections.EMPTY_LIST;
-		}
-	}
-
 	public static void main(String[] args) throws Exception {
 
-		// createMapping("lianan", "lianan");
-		// createCluterName("lianan");
+		// createMapping("test", "test");
+		// createCluterName("test");
 	}
 
 }
