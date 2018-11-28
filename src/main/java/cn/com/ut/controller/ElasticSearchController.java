@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.validation.Valid;
+
 import org.elasticsearch.action.admin.indices.analyze.AnalyzeAction;
 import org.elasticsearch.action.admin.indices.analyze.AnalyzeRequestBuilder;
 import org.elasticsearch.action.admin.indices.analyze.AnalyzeResponse;
@@ -16,9 +18,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import cn.com.ut.pojo.GeoPoint;
 import cn.com.ut.pojo.GoodsIndexQueryVo;
+import cn.com.ut.pojo.GoodsLocationQueryVo;
+import cn.com.ut.pojo.PolygonQueryVo;
 import cn.com.ut.service.GoodsService;
 import cn.com.ut.util.ElasticSearchUtil;
+import cn.com.ut.util.PageInfo;
 import cn.com.ut.vo.EsIndex;
 import cn.com.ut.vo.EsIndexField;
 import cn.com.ut.vo.EsSearchField;
@@ -69,15 +75,16 @@ public class ElasticSearchController {
 	}
 
 	@GetMapping("/createIndex")
-	public void createIndex(@RequestParam String indexName) {
+	public String createIndex(@RequestParam String indexName) {
 
-		ElasticSearchUtil.createIndex(indexName);
+		return ElasticSearchUtil.createIndex(indexName);
 	}
 
 	@PostMapping("/createType")
-	public void createType(@RequestBody EsIndexField index) {
+	public String createType(@RequestBody @Valid EsIndexField index) {
 
-		ElasticSearchUtil.createType(index.getIndex(), index.getType(), index.getFieldList());
+		return ElasticSearchUtil.createType(index.getIndex(), index.getType(),
+				index.getFieldList());
 	}
 
 	@GetMapping("/deleteIndex")
@@ -87,20 +94,20 @@ public class ElasticSearchController {
 	}
 
 	@PostMapping("/insertData")
-	public String insertData(@RequestBody EsIndex index) {
+	public String insertData(@RequestBody @Valid EsIndex index) {
 
 		return ElasticSearchUtil.insertData(index.getIndex(), index.getType(), index.getContent());
 	}
 
 	@PostMapping("/updateData")
-	public String updateData(@RequestBody EsIndex index) {
+	public String updateData(@RequestBody @Valid EsIndex index) {
 
 		return ElasticSearchUtil.updateData(index.getIndex(), index.getType(), index.getId(),
 				index.getContent());
 	}
 
 	@PostMapping("/deleteData")
-	public String deleteData(@RequestBody EsIndex index) {
+	public String deleteData(@RequestBody @Valid EsIndex index) {
 
 		return ElasticSearchUtil.deleteData(index.getIndex(), index.getType(), index.getId());
 	}
@@ -112,40 +119,41 @@ public class ElasticSearchController {
 	}
 
 	@PostMapping("/matchQuery")
-	public List<Map<String, Object>> matchQuery(@RequestBody EsSearchField searchField) {
+	public List<Map<String, Object>> matchQuery(@RequestBody @Valid EsSearchField searchField) {
 
 		return ElasticSearchUtil.matchQuery(searchField.getFieldName(), searchField.getKeyword());
 	}
 
 	@PostMapping("/matchMultiQuery")
-	public List<Map<String, Object>> matchMultiQuery(@RequestBody EsSearchFields searchFields) {
+	public List<Map<String, Object>> matchMultiQuery(
+			@RequestBody @Valid EsSearchFields searchFields) {
 
 		return ElasticSearchUtil.matchMultiQuery(searchFields.getFieldNames(),
 				searchFields.getKeyword());
 	}
 
 	@PostMapping("/queryString")
-	public List<Map<String, Object>> queryString(@RequestBody EsSearchField searchField) {
+	public List<Map<String, Object>> queryString(@RequestBody @Valid EsSearchField searchField) {
 
 		return ElasticSearchUtil.queryString(searchField.getKeyword());
 	}
 
 	@PostMapping("/termQuery")
-	public List<Map<String, Object>> termQuery(@RequestBody EsSearchField searchField) {
+	public List<Map<String, Object>> termQuery(@RequestBody @Valid EsSearchField searchField) {
 
 		return ElasticSearchUtil.termQuery(searchField.getFieldName(), searchField.getKeyword());
 
 	}
 
 	@PostMapping("/fuzzyQuery")
-	public List<Map<String, Object>> fuzzyQuery(@RequestBody EsSearchField searchField) {
+	public List<Map<String, Object>> fuzzyQuery(@RequestBody @Valid EsSearchField searchField) {
 
 		return ElasticSearchUtil.fuzzyQuery(searchField.getFieldName(), searchField.getKeyword());
 
 	}
 
 	@PostMapping("/wildcardQuery")
-	public List<Map<String, Object>> wildcardQuery(@RequestBody EsSearchField searchField) {
+	public List<Map<String, Object>> wildcardQuery(@RequestBody @Valid EsSearchField searchField) {
 
 		return ElasticSearchUtil.wildcardQuery(searchField.getFieldName(),
 				searchField.getKeyword());
@@ -172,9 +180,36 @@ public class ElasticSearchController {
 	}
 
 	@PostMapping("/queryIndex")
-	public List<Map<String, Object>> queryIndex(@RequestBody GoodsIndexQueryVo goodsIndexQueryVo)
+	public PageInfo queryIndex(@RequestBody @Valid GoodsIndexQueryVo goodsIndexQueryVo)
 			throws Exception {
 
 		return goodsService.queryIndex(goodsIndexQueryVo);
+	}
+
+	@PostMapping("/queryByLocation")
+	public PageInfo queryByLocation(@RequestBody @Valid GoodsLocationQueryVo goodsLocationQueryVo)
+			throws Exception {
+
+		return goodsService.queryByLocation(goodsLocationQueryVo);
+	}
+
+	@PostMapping("/queryListByLocation")
+	public List<Map<String, Object>> queryListByLocation(
+			@RequestBody @Valid GoodsLocationQueryVo goodsLocationQueryVo) throws Exception {
+
+		return goodsService.queryListByLocation(goodsLocationQueryVo);
+	}
+
+	@PostMapping("/queryListByPolygon")
+	public List<Map<String, Object>> queryListByPolygon(
+			@RequestBody @Valid PolygonQueryVo polygonQueryVo) throws Exception {
+
+		return goodsService.queryListByPolygon(polygonQueryVo);
+	}
+
+	@PostMapping("/getPointToPoint")
+	public double getPointToPoint(@RequestBody @Valid GeoPoint geoPoint) throws Exception {
+
+		return goodsService.getPointToPoint(geoPoint);
 	}
 }

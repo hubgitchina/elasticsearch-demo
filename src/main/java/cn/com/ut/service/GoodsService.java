@@ -3,7 +3,11 @@ package cn.com.ut.service;
 import java.util.List;
 import java.util.Map;
 
+import cn.com.ut.pojo.GeoPoint;
 import cn.com.ut.pojo.GoodsIndexQueryVo;
+import cn.com.ut.pojo.GoodsLocationQueryVo;
+import cn.com.ut.pojo.PolygonQueryVo;
+import cn.com.ut.util.PageInfo;
 
 /**
  * @Description: 商品管理业务层接口
@@ -27,5 +31,31 @@ public interface GoodsService {
 	 * @param goodsIndexQueryVo
 	 * @return
 	 */
-	List<Map<String, Object>> queryIndex(GoodsIndexQueryVo goodsIndexQueryVo);
+	PageInfo queryIndex(GoodsIndexQueryVo goodsIndexQueryVo);
+
+	/**
+	 * 根据搜索范围和坐标位置进行分页查询
+	 * 
+	 * @param goodsLocationQueryVo
+	 * @return
+	 */
+	PageInfo queryByLocation(GoodsLocationQueryVo goodsLocationQueryVo);
+
+	/**
+	 * 根据坐标和搜索范围进行范围搜索，返回所有符合条件的数据
+	 * 
+	 * @param goodsLocationQueryVo
+	 * @return
+	 */
+	List<Map<String, Object>> queryListByLocation(GoodsLocationQueryVo goodsLocationQueryVo);
+
+	/**
+	 * 多边形查询
+	 * 
+	 * @param polygonQueryVo
+	 * @return
+	 */
+	List<Map<String, Object>> queryListByPolygon(PolygonQueryVo polygonQueryVo);
+
+	double getPointToPoint(GeoPoint geoPoint);
 }

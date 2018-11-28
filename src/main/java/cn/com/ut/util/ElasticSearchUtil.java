@@ -1,6 +1,8 @@
 package cn.com.ut.util;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +16,7 @@ import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.count.CountResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.ClearScrollRequestBuilder;
@@ -35,6 +38,10 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -67,7 +74,7 @@ public class ElasticSearchUtil {
 	 * 
 	 * @param indexName
 	 */
-	public static void createIndex(String indexName) {
+	public static String createIndex(String indexName) {
 
 		if (isIndexExists(indexName)) {
 			throw new RuntimeException("索引对象已经存在，无法创建！");
@@ -76,6 +83,8 @@ public class ElasticSearchUtil {
 		Client client = EsServerClient.getClient();
 		client.admin().indices().prepareCreate(indexName).execute().actionGet();
 		client.close();
+
+		return "创建索引成功";
 	}
 
 	/**
@@ -101,7 +110,7 @@ public class ElasticSearchUtil {
 		client.close();
 	}
 
-	public static void createType(String index, String type, List<EsField> fieldList) {
+	public static String createType(String index, String type, List<EsField> fieldList) {
 
 		Client client = EsServerClient.getClient();
 
@@ -110,6 +119,8 @@ public class ElasticSearchUtil {
 		client.admin().indices().putMapping(mapping).actionGet();
 
 		client.close();
+
+		return "创建类型和类型结构成功";
 	}
 
 	public static XContentBuilder getMapping(List<EsField> fieldList) {
@@ -555,6 +566,184 @@ public class ElasticSearchUtil {
 	}
 
 	/**
+	 * 分页查询
+	 * 
+	 * @param boolQueryBuilder
+	 * @param pageno
+	 * @param pagesize
+	 * @param sortBuilder
+	 * @return
+	 */
+	public static PageInfo queryForPage(BoolQueryBuilder boolQueryBuilder, int pageno, int pagesize,
+			SortBuilder sortBuilder) {
+
+		Client client = EsServerClient.getClient();
+
+		int from = (pageno - 1) * pagesize;
+
+		SearchRequestBuilder searchRequestBuilder = client.prepareSearch()
+				.setQuery(boolQueryBuilder).setFrom(from).setSize(pagesize);
+
+		if (sortBuilder != null) {
+			searchRequestBuilder.addSort(sortBuilder);
+		}
+
+		SearchResponse response = searchRequestBuilder.execute().actionGet();
+
+		SearchHits searchHits = response.getHits();
+
+		client.close();
+
+		PageInfo page = null;
+
+		if (searchHits.getTotalHits() > 0) {
+			List<Map<String, Object>> resultList = Lists
+					.newArrayListWithCapacity((int) searchHits.getTotalHits());
+			for (SearchHit searchHit : searchHits) {
+				Map<String, Object> map = searchHit.getSource();
+				if (searchHit.getSortValues() != null && searchHit.getSortValues().length > 0) {
+					if (searchHit.getSortValues()[0] instanceof Double) {
+						// 获取距离值，并保留两位小数点
+						BigDecimal distance = new BigDecimal((Double) searchHit.getSortValues()[0]);
+						map.put("distance", distance.setScale(0, RoundingMode.UP));
+					}
+				}
+				resultList.add(map);
+			}
+
+			Pageable pageable = new PageRequest(pageno - 1, pagesize);
+			long total = searchHits.getTotalHits();
+
+			Page<Map<String, Object>> goodsPage = new PageImpl<>(resultList, pageable, total);
+			page = PageInfo.build().appendPage(goodsPage);
+			return page;
+		} else {
+			return page;
+		}
+	}
+
+	/**
+	 * 查询所有数据（通过Scroll滚动搜索返回全部符合条件的数据，适用于检索数据大于10000的情况）
+	 * 
+	 * @param boolQueryBuilder
+	 * @param sortBuilder
+	 * @return
+	 */
+	public static List<Map<String, Object>> queryForListByScroll(BoolQueryBuilder boolQueryBuilder,
+			SortBuilder sortBuilder) {
+
+		Client client = EsServerClient.getClient();
+
+		SearchRequestBuilder searchRequestBuilder = client.prepareSearch()
+				.setQuery(boolQueryBuilder);
+
+		if (sortBuilder != null) {
+			searchRequestBuilder.addSort(sortBuilder);
+		}
+
+		// 设置每批读取的数据量
+		searchRequestBuilder.setSize(100);
+
+		// 设置 search context 维护1分钟的有效期
+		searchRequestBuilder.setScroll(TimeValue.timeValueMinutes(1));
+
+		SearchResponse scrollResp = searchRequestBuilder.execute().actionGet();
+
+		SearchHits searchHits = scrollResp.getHits();
+
+		System.out.println("总记录数：" + searchHits.getTotalHits());
+
+		String scrollId = scrollResp.getScrollId();
+		System.out.println("scrollId: " + scrollId);
+
+		List<Map<String, Object>> resultList = Lists
+				.newArrayListWithCapacity((int) searchHits.getTotalHits());
+
+		if (searchHits.getTotalHits() > 0) {
+			while (true) {
+				for (SearchHit searchHit : scrollResp.getHits()) {
+					Map<String, Object> map = searchHit.getSource();
+					if (searchHit.getSortValues() != null && searchHit.getSortValues().length > 0) {
+						if (searchHit.getSortValues()[0] instanceof Double) {
+							// 获取距离值，并保留两位小数点
+							BigDecimal distance = new BigDecimal(
+									(Double) searchHit.getSortValues()[0]);
+							map.put("distance", distance.setScale(0, RoundingMode.UP));
+						}
+					}
+					resultList.add(map);
+				}
+
+				scrollResp = client.prepareSearchScroll(scrollResp.getScrollId())
+						.setScroll(new TimeValue(600000)).execute().actionGet();
+				if (scrollResp.getHits().getHits().length == 0) {
+					break;
+				}
+			}
+
+			System.out.println("返回记录数：" + resultList.size());
+
+			clearScroll(client, scrollId);
+		}
+
+		client.close();
+
+		return resultList;
+	}
+
+	/**
+	 * 查询所有数据（通过Count搜索返回全部符合条件记录的数量，适用于检索数据小于10000的情况）
+	 * 
+	 * @param boolQueryBuilder
+	 * @param sortBuilder
+	 * @return
+	 */
+	public static List<Map<String, Object>> queryForList(BoolQueryBuilder boolQueryBuilder,
+			SortBuilder sortBuilder) {
+
+		Client client = EsServerClient.getClient();
+		CountResponse countResponse = client.prepareCount().setQuery(boolQueryBuilder).execute()
+				.actionGet();
+		long count = countResponse.getCount();
+		if (count == 0) {
+			return Collections.EMPTY_LIST;
+		}
+
+		SearchRequestBuilder searchRequestBuilder = client.prepareSearch()
+				.setQuery(boolQueryBuilder);
+
+		if (sortBuilder != null) {
+			searchRequestBuilder.addSort(sortBuilder);
+		}
+
+		searchRequestBuilder.setFrom(0).setSize((int) count);
+
+		SearchResponse response = searchRequestBuilder.execute().actionGet();
+
+		SearchHits searchHits = response.getHits();
+
+		client.close();
+
+		System.out.println("总记录数：" + searchHits.getTotalHits());
+
+		List<Map<String, Object>> resultList = Lists
+				.newArrayListWithCapacity((int) searchHits.getTotalHits());
+		for (SearchHit searchHit : searchHits) {
+			Map<String, Object> map = searchHit.getSource();
+			if (searchHit.getSortValues() != null && searchHit.getSortValues().length > 0) {
+				if (searchHit.getSortValues()[0] instanceof Double) {
+					// 获取距离值，并保留两位小数点
+					BigDecimal distance = new BigDecimal((Double) searchHit.getSortValues()[0]);
+					map.put("distance", distance.setScale(0, RoundingMode.UP));
+				}
+			}
+			resultList.add(map);
+		}
+
+		return resultList;
+	}
+
+	/**
 	 * 根据from-size进行分页查询（默认分页深度的10000，如果超过10000就会报错）
 	 * 
 	 * @param queryBuilder
@@ -580,6 +769,8 @@ public class ElasticSearchUtil {
 
 		SearchHits searchHits = response.getHits();
 
+		System.out.println("总记录数：" + searchHits.getTotalHits());
+
 		client.close();
 
 		if (searchHits.getTotalHits() > 0) {
@@ -587,6 +778,13 @@ public class ElasticSearchUtil {
 					.newArrayListWithCapacity((int) searchHits.getTotalHits());
 			for (SearchHit searchHit : searchHits) {
 				Map<String, Object> map = searchHit.getSource();
+				// if (searchHit.getSortValues() != null) {
+				// // 获取距离值，并保留两位小数点
+				// BigDecimal distance = new BigDecimal((Double)
+				// searchHit.getSortValues()[0]);
+				// map.put("distance", distance.setScale(0,
+				// RoundingMode.UP));
+				// }
 				resultList.add(map);
 			}
 			return resultList;
