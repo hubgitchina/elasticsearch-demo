@@ -3,10 +3,10 @@ package cn.com.ut.service;
 import java.util.List;
 import java.util.Map;
 
-import cn.com.ut.pojo.GeoPoint;
 import cn.com.ut.pojo.GoodsIndexQueryVo;
 import cn.com.ut.pojo.GoodsLocationQueryVo;
 import cn.com.ut.pojo.PolygonQueryVo;
+import cn.com.ut.pojo.TwoPointDistanceQueryVo;
 import cn.com.ut.util.PageInfo;
 
 /**
@@ -57,5 +57,11 @@ public interface GoodsService {
 	 */
 	List<Map<String, Object>> queryListByPolygon(PolygonQueryVo polygonQueryVo);
 
-	double getPointToPoint(GeoPoint geoPoint);
+	/**
+	 * 计算两点距离
+	 * 
+	 * @param twoPointDistanceQueryVo
+	 * @return
+	 */
+	double getPointToPoint(TwoPointDistanceQueryVo twoPointDistanceQueryVo);
 }

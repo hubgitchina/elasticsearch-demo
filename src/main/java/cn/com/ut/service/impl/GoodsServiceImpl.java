@@ -30,6 +30,7 @@ import cn.com.ut.pojo.GeoPoint;
 import cn.com.ut.pojo.GoodsIndexQueryVo;
 import cn.com.ut.pojo.GoodsLocationQueryVo;
 import cn.com.ut.pojo.PolygonQueryVo;
+import cn.com.ut.pojo.TwoPointDistanceQueryVo;
 import cn.com.ut.service.GoodsService;
 import cn.com.ut.util.CollectionUtil;
 import cn.com.ut.util.CommonUtil;
@@ -264,13 +265,19 @@ public class GoodsServiceImpl extends JPQLQueryUtil implements GoodsService {
 	}
 
 	@Override
-	public double getPointToPoint(GeoPoint geoPoint) {
+	public double getPointToPoint(TwoPointDistanceQueryVo twoPointDistanceQueryVo) {
 
-		double lat1 = 22.28066;
-		double lon1 = 113.56663;
+		// double lat1 = 22.28066;
+		// double lon1 = 113.56663;
+		//
+		// double lat2 = 22.28073;
+		// double lon2 = 113.56719;
 
-		double lat2 = 22.28073;
-		double lon2 = 113.56719;
+		double lat1 = twoPointDistanceQueryVo.getOne().getLatitude();
+		double lon1 = twoPointDistanceQueryVo.getOne().getLongitude();
+
+		double lat2 = twoPointDistanceQueryVo.getTwo().getLatitude();
+		double lon2 = twoPointDistanceQueryVo.getTwo().getLongitude();
 
 		return MapDistanceUtil.getDistance(lat1, lon1, lat2, lon2);
 

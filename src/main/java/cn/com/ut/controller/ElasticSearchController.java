@@ -19,10 +19,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import cn.com.ut.entity.MallApp;
-import cn.com.ut.pojo.GeoPoint;
 import cn.com.ut.pojo.GoodsIndexQueryVo;
 import cn.com.ut.pojo.GoodsLocationQueryVo;
 import cn.com.ut.pojo.PolygonQueryVo;
+import cn.com.ut.pojo.TwoPointDistanceQueryVo;
 import cn.com.ut.service.GoodsService;
 import cn.com.ut.service.MallAppService;
 import cn.com.ut.util.ElasticSearchUtil;
@@ -213,9 +213,10 @@ public class ElasticSearchController {
 	}
 
 	@PostMapping("/getPointToPoint")
-	public double getPointToPoint(@RequestBody @Valid GeoPoint geoPoint) throws Exception {
+	public double getPointToPoint(
+			@RequestBody @Valid TwoPointDistanceQueryVo twoPointDistanceQueryVo) throws Exception {
 
-		return goodsService.getPointToPoint(geoPoint);
+		return goodsService.getPointToPoint(twoPointDistanceQueryVo);
 	}
 
 	@PostMapping("/findAllMallApp")
