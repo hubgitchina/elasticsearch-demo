@@ -17,7 +17,6 @@ import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -179,11 +178,8 @@ public class GoodsServiceImpl extends JPQLQueryUtil implements GoodsService {
 		return goodsPage;
 	}
 
-	@Autowired
-	private ElasticsearchTemplate est;
-
 	@Override
-	public PageInfo queryByLocation(GoodsLocationQueryVo goodsLocationQueryVo) {
+	public PageInfo queryPageByLocation(GoodsLocationQueryVo goodsLocationQueryVo) {
 
 		double lon = goodsLocationQueryVo.getLongitude();
 		double lat = goodsLocationQueryVo.getLatitude();

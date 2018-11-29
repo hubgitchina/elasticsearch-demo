@@ -38,10 +38,13 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -689,6 +692,23 @@ public class ElasticSearchUtil {
 		client.close();
 
 		return resultList;
+	}
+
+	@Autowired
+	private ElasticsearchTemplate est;
+
+	/**
+	 * 使用Spring封装ES的ElasticsearchTemplate进行数据条目查询（需要指定索引index，否则会报错）
+	 * 
+	 * @param boolQueryBuilder
+	 * @return
+	 */
+	public long countByIndex(QueryBuilder queryBuilder) {
+
+		NativeSearchQueryBuilder searchQuery = new NativeSearchQueryBuilder();
+		searchQuery.withIndices("buz_goods").withQuery(queryBuilder);
+		long count = est.count(searchQuery.build());
+		return count;
 	}
 
 	/**

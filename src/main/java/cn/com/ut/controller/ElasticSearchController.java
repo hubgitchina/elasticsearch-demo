@@ -18,11 +18,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import cn.com.ut.entity.MallApp;
 import cn.com.ut.pojo.GeoPoint;
 import cn.com.ut.pojo.GoodsIndexQueryVo;
 import cn.com.ut.pojo.GoodsLocationQueryVo;
 import cn.com.ut.pojo.PolygonQueryVo;
 import cn.com.ut.service.GoodsService;
+import cn.com.ut.service.MallAppService;
 import cn.com.ut.util.ElasticSearchUtil;
 import cn.com.ut.util.PageInfo;
 import cn.com.ut.vo.EsIndex;
@@ -44,6 +46,9 @@ public class ElasticSearchController {
 
 	@Autowired
 	private GoodsService goodsService;
+
+	@Autowired
+	private MallAppService mallAppService;
 
 	/**
 	 * 获取IK分词结果
@@ -190,7 +195,7 @@ public class ElasticSearchController {
 	public PageInfo queryByLocation(@RequestBody @Valid GoodsLocationQueryVo goodsLocationQueryVo)
 			throws Exception {
 
-		return goodsService.queryByLocation(goodsLocationQueryVo);
+		return goodsService.queryPageByLocation(goodsLocationQueryVo);
 	}
 
 	@PostMapping("/queryListByLocation")
@@ -211,5 +216,11 @@ public class ElasticSearchController {
 	public double getPointToPoint(@RequestBody @Valid GeoPoint geoPoint) throws Exception {
 
 		return goodsService.getPointToPoint(geoPoint);
+	}
+
+	@PostMapping("/findAllMallApp")
+	public List<MallApp> findAllMallApp() throws Exception {
+
+		return mallAppService.findAll();
 	}
 }

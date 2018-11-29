@@ -39,7 +39,7 @@ public interface GoodsService {
 	 * @param goodsLocationQueryVo
 	 * @return
 	 */
-	PageInfo queryByLocation(GoodsLocationQueryVo goodsLocationQueryVo);
+	PageInfo queryPageByLocation(GoodsLocationQueryVo goodsLocationQueryVo);
 
 	/**
 	 * 根据坐标和搜索范围进行范围搜索，返回所有符合条件的数据
