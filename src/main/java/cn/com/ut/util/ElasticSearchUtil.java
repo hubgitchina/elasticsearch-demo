@@ -58,7 +58,7 @@ public class ElasticSearchUtil {
 
 	/**
 	 * 判断是否存在该索引
-	 * 
+	 *
 	 * @param indexName
 	 *            索引名称
 	 * @return
@@ -74,7 +74,7 @@ public class ElasticSearchUtil {
 
 	/**
 	 * 创建索引
-	 * 
+	 *
 	 * @param indexName
 	 */
 	public static String createIndex(String indexName) {
@@ -92,7 +92,7 @@ public class ElasticSearchUtil {
 
 	/**
 	 * 创建索引
-	 * 
+	 *
 	 * @param index
 	 *            索引名称
 	 * @param type
@@ -113,12 +113,14 @@ public class ElasticSearchUtil {
 		client.close();
 	}
 
-	public static String createType(String index, String type, List<EsField> fieldList) {
+	public static String createType(String index, String type, String parent,
+			List<EsField> fieldList) {
 
 		Client client = EsServerClient.getClient();
 
 		PutMappingRequest mapping = Requests.putMappingRequest(index).type(type)
-				.source(getMapping(fieldList));
+				.source(getMapping(fieldList, parent));
+
 		client.admin().indices().putMapping(mapping).actionGet();
 
 		client.close();
@@ -126,11 +128,17 @@ public class ElasticSearchUtil {
 		return "创建类型和类型结构成功";
 	}
 
-	public static XContentBuilder getMapping(List<EsField> fieldList) {
+	public static XContentBuilder getMapping(List<EsField> fieldList, String parent) {
 
 		XContentBuilder mapping = null;
 		try {
-			mapping = XContentFactory.jsonBuilder().startObject().startObject("properties");
+			if (StringUtils.isNotBlank(parent)) {
+				// 如果有父类型关联，添加父节点信息
+				mapping = XContentFactory.jsonBuilder().startObject().startObject("_parent")
+						.field("type", parent).endObject().startObject("properties");
+			} else {
+				mapping = XContentFactory.jsonBuilder().startObject().startObject("properties");
+			}
 
 			for (EsField field : fieldList) {
 				mapping.startObject(field.getFieldName());
@@ -279,7 +287,7 @@ public class ElasticSearchUtil {
 
 	/**
 	 * 打印插入索引信息
-	 * 
+	 *
 	 * @param response
 	 */
 	private static void printIndexInfo(IndexResponse response) {
@@ -299,7 +307,7 @@ public class ElasticSearchUtil {
 
 	/**
 	 * 打印更新索引信息
-	 * 
+	 *
 	 * @param response
 	 */
 	private static void printIndexInfo(UpdateResponse response) {
@@ -319,7 +327,7 @@ public class ElasticSearchUtil {
 
 	/**
 	 * 打印删除索引信息
-	 * 
+	 *
 	 * @param response
 	 */
 	private static void printIndexInfo(DeleteResponse response) {
@@ -373,7 +381,7 @@ public class ElasticSearchUtil {
 
 	/**
 	 * 单个字段IK查找 (matchQuery会将搜索词分词，再与目标查询字段进行匹配，若分词中的任意一个词与目标字段匹配上，则可查询到)
-	 * 
+	 *
 	 * @param searchField
 	 * @param keyword
 	 * @return
@@ -386,7 +394,7 @@ public class ElasticSearchUtil {
 
 	/**
 	 * 多个字段IK查找 (matchQuery会将搜索词分词，再与目标查询字段进行匹配，若分词中的任意一个词与目标字段匹配上，则可查询到)
-	 * 
+	 *
 	 * @param searchFields
 	 * @param keyword
 	 * @return
@@ -414,7 +422,7 @@ public class ElasticSearchUtil {
 
 	/**
 	 * 单个字段精确查找 (不会对搜索词进行分词处理，而是作为一个整体与目标字段进行匹配，若完全匹配，则可查询到)
-	 * 
+	 *
 	 * @param searchField
 	 * @param keyword
 	 * @return
@@ -427,7 +435,7 @@ public class ElasticSearchUtil {
 
 	/**
 	 * 单个字段模糊查询
-	 * 
+	 *
 	 * @param searchField
 	 * @param keyword
 	 * @return
@@ -440,7 +448,7 @@ public class ElasticSearchUtil {
 
 	/**
 	 * 通配符查询
-	 * 
+	 *
 	 * @param searchField
 	 * @param keyword
 	 * @return
@@ -455,7 +463,7 @@ public class ElasticSearchUtil {
 
 	/**
 	 * scroll分页
-	 * 
+	 *
 	 * @return
 	 */
 	public static List<Map<String, Object>> searchScrollFunction() {
@@ -512,7 +520,7 @@ public class ElasticSearchUtil {
 
 	/**
 	 * 根据scrollId查询，每次调用只要scrollId在有效期内，则都会自动查询下一页的数据
-	 * 
+	 *
 	 * @param scrollId
 	 * @return
 	 */
@@ -540,7 +548,7 @@ public class ElasticSearchUtil {
 
 	/**
 	 * 批量清除滚动ID
-	 * 
+	 *
 	 * @param client
 	 * @param scrollIdList
 	 * @return
@@ -555,7 +563,7 @@ public class ElasticSearchUtil {
 
 	/**
 	 * 清除滚动ID
-	 * 
+	 *
 	 * @param client
 	 * @param scrollId
 	 * @return
@@ -570,7 +578,7 @@ public class ElasticSearchUtil {
 
 	/**
 	 * 分页查询
-	 * 
+	 *
 	 * @param boolQueryBuilder
 	 * @param pageno
 	 * @param pagesize
@@ -627,7 +635,7 @@ public class ElasticSearchUtil {
 
 	/**
 	 * 查询所有数据（通过Scroll滚动搜索返回全部符合条件的数据，适用于检索数据大于10000的情况）
-	 * 
+	 *
 	 * @param boolQueryBuilder
 	 * @param sortBuilder
 	 * @return
@@ -699,7 +707,7 @@ public class ElasticSearchUtil {
 
 	/**
 	 * 使用Spring封装ES的ElasticsearchTemplate进行数据条目查询（需要指定索引index，否则会报错）
-	 * 
+	 *
 	 * @param boolQueryBuilder
 	 * @return
 	 */
@@ -713,7 +721,7 @@ public class ElasticSearchUtil {
 
 	/**
 	 * 查询所有数据（通过Count搜索返回全部符合条件记录的数量，适用于检索数据小于10000的情况）
-	 * 
+	 *
 	 * @param boolQueryBuilder
 	 * @param sortBuilder
 	 * @return
@@ -765,7 +773,7 @@ public class ElasticSearchUtil {
 
 	/**
 	 * 根据from-size进行分页查询（默认分页深度的10000，如果超过10000就会报错）
-	 * 
+	 *
 	 * @param queryBuilder
 	 * @param pageno
 	 * @param pagesize

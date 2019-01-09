@@ -33,7 +33,7 @@ import cn.com.ut.vo.EsSearchField;
 import cn.com.ut.vo.EsSearchFields;
 
 /**
- * 
+ *
  * @author wangpeng1
  * @since 2018年10月23日
  */
@@ -52,7 +52,7 @@ public class ElasticSearchController {
 
 	/**
 	 * 获取IK分词结果
-	 * 
+	 *
 	 * @param searchContent
 	 * @return
 	 */
@@ -88,7 +88,7 @@ public class ElasticSearchController {
 	@PostMapping("/createType")
 	public String createType(@RequestBody @Valid EsIndexField index) {
 
-		return ElasticSearchUtil.createType(index.getIndex(), index.getType(),
+		return ElasticSearchUtil.createType(index.getIndex(), index.getType(), index.getParent(),
 				index.getFieldList());
 	}
 

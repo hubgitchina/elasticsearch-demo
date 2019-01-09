@@ -11,5 +11,7 @@ public class EsIndexField {
 
 	private String type;
 
+	private String parent;
+
 	private List<EsField> fieldList;
 }
