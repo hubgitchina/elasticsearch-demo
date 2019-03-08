@@ -271,8 +271,22 @@ public class ElasticSearchUtil {
 
 		return "更新数据成功";
 	}
+	
+	//可直接注入，无需通过EsServerClient工具类来获取并关闭
+	//@Autowired
+	//private Client client;
 
 	public static String deleteData(String index, String type, String id) {
+		
+		//单条记录删除，父子结构文档关系时，需使用该方式指定路由routing，否则删除子文档会失败，删除不了
+		//client.prepareDelete(EsConstant.INDEX_NAME, EsConstant.TypeName.ES_GOODS, esGoods.getId()).setRouting(esGoods.getStoreEsId()).get();
+		
+		//批量删除，父子结构文档关系时，删除子文档使用该方式
+		//BulkRequestBuilder bulkRequest = client.prepareBulk();
+		//for (EsGoods esGoods : esGoodsList) {
+		//	bulkRequest.add(client.prepareDelete(index, type,	id).setRouting(routing));
+		//}
+		//bulkRequest.execute().actionGet();
 
 		Client client = EsServerClient.getClient();
 
